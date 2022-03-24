@@ -8,8 +8,7 @@ use actix_http::Method;
 use actix_web::{
     cookie::Cookie,
     dev::{AppService, HttpServiceFactory},
-    http::header::{self, IntoHeaderValue},
-    http::{HeaderName, HeaderValue},
+    http::header::{self, HeaderName, HeaderValue, TryIntoHeaderValue},
     FromRequest, HttpRequest, HttpResponse, Responder, Route, Scope,
 };
 use serde::Serialize;
@@ -18,6 +17,7 @@ use std::collections::HashMap;
 use actix_web::dev::Handler;
 pub use actix_web::http::StatusCode;
 use std::future::Future;
+use actix_http::body::EitherBody;
 
 /// Set content-type supported by actix-swagger
 #[derive(Debug)]
@@ -60,7 +60,7 @@ impl<'a, T: Serialize> Answer<'a, T> {
     /// Set header to answer
     pub fn header<V>(mut self, key: String, value: V) -> Self
     where
-        V: IntoHeaderValue,
+        V: TryIntoHeaderValue,
     {
         if let Ok(value) = value.try_into_value() {
             self.headers.insert(key, value);
@@ -102,30 +102,34 @@ impl<'a, T: Serialize> Answer<'a, T> {
     }
 }
 
+// impl<'a, T: Serialize + actix_web::body::MessageBody + 'static> Responder for Answer<'a, T> {
 impl<'a, T: Serialize> Responder for Answer<'a, T> {
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse {
+    type Body = EitherBody<String>;
+
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
         let body = match self.to_string() {
             Ok(body) => body,
-            Err(e) => return HttpResponse::from_error(e),
+            Err(e) => return HttpResponse::from_error(e).map_into_right_body(),
         };
 
-        let mut response = &mut HttpResponse::build(self.status_code.unwrap_or(StatusCode::OK));
+        // let mut response = HttpResponse::<Self::Body>::with_body(self.status_code.unwrap_or(StatusCode::OK), body.try_into().unwrap());
+        let mut response = body.customize().with_status(self.status_code.unwrap_or(StatusCode::OK));
 
         if let Some(content_type) = self.content_type {
-            response = response.append_header((header::CONTENT_TYPE, content_type.to_string()));
+            response = response.insert_header((header::CONTENT_TYPE, content_type.to_string()));
         }
 
         for (name, value) in self.headers {
             if let Ok(header_name) = name.parse::<HeaderName>() {
-                response = response.append_header((header_name, value))
+                response = response.insert_header((header_name, value));
             }
         }
 
+        let mut res = response.respond_to(req);
         for cookie in self.cookies {
-            response = response.cookie(cookie);
+            res.add_cookie(&cookie).unwrap();
         }
-
-        response.body(body)
+        res
     }
 }
 
@@ -157,7 +161,8 @@ impl Api {
         T: FromRequest + 'static,
         R: Future + 'static,
         R::Output: Responder + 'static,
-        F: Handler<T, R>,
+        F: Handler<T>,
+        F::Output: Responder + 'static,
     {
         take_mut::take(
             self.resources

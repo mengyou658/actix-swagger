@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 actix-swagger = { path = "../actix-swagger" }
-actix-web = "4.0.0-beta.10"
+swagg = { path = "../swagg" }
+actix-web = "4.0"
 serde = "1.0.130"

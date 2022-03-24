@@ -85,7 +85,7 @@ impl Printable for ImplApi {
 
         quote! {
             use actix_web::FromRequest;
-            use actix_swagger::{Answer, Method};
+            use actix_swagger::{Answer};
             use std::future::Future;
             use super::paths;
 
@@ -113,7 +113,7 @@ mod tests {
     fn default_api() {
         assert_snapshot!(shot(ImplApi::default()), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl Api {}
@@ -129,7 +129,7 @@ mod tests {
 
         assert_snapshot!(shot(api), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl Hello {}
@@ -153,17 +153,17 @@ mod tests {
 
         assert_snapshot!(shot(vec![api1, api2, api3]), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl HelloGoof {}
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl ThatsMyName {}
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl RandomizeThisFWooorld {}
@@ -181,7 +181,7 @@ mod tests {
 
         assert_snapshot!(shot(api(vec![method])), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl TestApi {
@@ -218,7 +218,7 @@ mod tests {
 
         assert_snapshot!(shot(api(vec![method1, method2])), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl TestApi {
@@ -262,7 +262,7 @@ mod tests {
 
         assert_snapshot!(shot(api(vec![method])), @r###"
         use super::paths;
-        use actix_swagger::{Answer, Method};
+        use actix_swagger::{Answer};
         use actix_web::FromRequest;
         use std::future::Future;
         impl TestApi {
